@@ -71,12 +71,13 @@ const CustomersPage = () => {
         setCustomers(response.data.content);
         setPagination(response.data.pagination);
       } else {
-        showToast(response.message || 'API 응답에 데이터가 없습니다.', 'error');
+        showToast(response.message || '고객 정보를 불러오는데 실패했습니다.', 'error');
       }
-    } catch (error) {
-      console.error('Failed to load customers:', error);
-      showToast('고객 정보를 불러오는데 실패했습니다.', 'error');
     } finally {
+      // catch (error) {
+      //   console.error('Failed to load customers:', error);
+      //   showToast('고객 정보를 불러오는데 실패했습니다.', 'error');
+      // }
       setIsLoading(false);
     }
   }, [showToast, filter]);
@@ -164,7 +165,7 @@ const CustomersPage = () => {
 
         setSelectedCustomer(updatedCustomer);
 
-        showToast('고객 정보가 성공적으로 수정되었습니다.', 'success');
+        showToast(response.message || '고객 정보가 성공적으로 수정되었습니다.', 'success');
 
         // 목록 새로고침
         loadCustomers();
@@ -172,10 +173,11 @@ const CustomersPage = () => {
         // 실패 시 에러 메시지 표시
         showToast(response.message || '고객 정보 수정에 실패했습니다.', 'error');
       }
-    } catch (error) {
-      console.error('고객 정보 수정 중 오류 발생:', error);
-      showToast('서버 연결 중 오류가 발생했습니다.', 'error');
     } finally {
+      // catch (error) {
+      //   console.error('고객 정보 수정 중 오류 발생:', error);
+      //   showToast('서버 연결 중 오류가 발생했습니다.', 'error');
+      // }
       // 모달 닫기
       setIsEditModalOpen(false);
     }
@@ -189,17 +191,18 @@ const CustomersPage = () => {
       const response = await deleteMyCustomer(selectedCustomer.id);
 
       if (response.success && response.data) {
-        showToast('고객 정보가 성공적으로 삭제되었습니다.', 'success');
+        showToast(response.message || '고객 정보가 성공적으로 삭제되었습니다.', 'success');
 
         // 목록 새로고침
         loadCustomers();
       } else {
         showToast(response.message || '고객 정보 삭제에 실패했습니다.', 'error');
       }
-    } catch (error) {
-      console.error('고객 정보 삭제 중 오류 발생:', error);
-      showToast('서버 연결 중 오류가 발생했습니다.', 'error');
     } finally {
+      //  catch (error) {
+      //   console.error('고객 정보 삭제 중 오류 발생:', error);
+      //   showToast('서버 연결 중 오류가 발생했습니다.', 'error');
+      // }
       setIsDeleteModalOpen(false);
     }
   };
@@ -210,7 +213,7 @@ const CustomersPage = () => {
       const response = await createMyCustomer(customerData);
 
       if (response.success && response.data) {
-        showToast('고객 등록 성공', 'success');
+        showToast(response.message || '고객 등록 성공', 'success');
 
         // 목록 새로고침
         loadCustomers();
@@ -306,9 +309,9 @@ const CustomersPage = () => {
       header: '연령대',
       render: (customer: Customer) => (
         <div>
-          <div>{customer.ageGroup ? `${customer.ageGroup}대` : '선택 안 함'}</div>
+          <div>{customer.ageGroup ? `${customer.ageGroup}대` : '-'}</div>
           <div className="text-gray-500 text-xs">
-            {customer.gender === 'M' ? '남성' : customer.gender === 'F' ? '여성' : '선택 안 함'}
+            {customer.gender === 'M' ? '남성' : customer.gender === 'F' ? '여성' : '-'}
           </div>
         </div>
       ),

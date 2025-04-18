@@ -29,8 +29,10 @@ const customerSchema = z.object({
   name: z
     .string()
     .min(2, '이름은 2자 이상 50자 이하 여야 합니다.')
-    .max(50, '이름은 2자 이상 50자 이하 여야 합니다.'),
-  email: z.string().email('유효한 이메일 주소를 입력해주세요.'),
+    .max(50, '이름은 2자 이상 50자 이하 여야 합니다.')
+    .optional()
+    .or(z.literal('')),
+  email: z.string().email('유효한 이메일 주소를 입력해주세요.').optional().or(z.literal('')),
   contact: z
     .string()
     .regex(/^\d{2,3}-\d{3,4}-\d{4}$/, '유효한 전화번호 형식을 입력해주세요. (예: 010-1234-5678)'),
@@ -124,7 +126,6 @@ const CustomerForm = ({ initialData, onSubmit, onCancel }: CustomerFormProps) =>
                 placeholder="고객 이름"
                 error={errors.name?.message}
                 leftIcon={<User size={18} />}
-                required
               />
             )}
           />
@@ -141,7 +142,6 @@ const CustomerForm = ({ initialData, onSubmit, onCancel }: CustomerFormProps) =>
                   placeholder="example@example.com"
                   error={errors.email?.message}
                   leftIcon={<Mail size={18} />}
-                  required
                 />
               )}
             />
