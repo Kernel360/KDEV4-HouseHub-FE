@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { NotificationEvent } from '../types/notification';
+import { useAuth } from '../context/useAuth';
 
 interface UseSSEOptions {
   url: string;
@@ -15,10 +16,6 @@ interface UseSSEOptions {
   withCredentials?: boolean;
 }
 
-/**
- * SSE(Server-Sent Events) 연결을 관리하는 훅
- * event-source-polyfill을 사용하여 브라우저 호환성 향상
- */
 const useSSE = ({
   url,
   onMessage,
@@ -28,71 +25,54 @@ const useSSE = ({
   maxReconnectAttempts = 5,
   headers = {},
   withCredentials = true,
-}: UseSSEOptions & { userId?: string | null }) => {
+}: UseSSEOptions) => {
+  const { user } = useAuth();
+  const userId = user?.id;
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttemptsRef = useRef(0);
   const eventSourceRef = useRef<EventSourcePolyfill | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  const isLeaderRef = useRef(false);
 
-  // SSE 연결 함수
   const connect = useCallback(() => {
-    console.log('🔌 SSE 연결 시도:', url);
-    if (eventSourceRef.current || isConnected) {
-      console.log('SSE 이미 연결됨. 재연결 생략');
-      return;
-    }
+    if (!userId || eventSourceRef.current || isConnected) return;
 
-    try {
-      const options = {
-        headers,
-        withCredentials,
-      };
+    const eventSource = new EventSourcePolyfill(url, {
+      headers,
+      withCredentials,
+    });
 
-      const eventSource = new EventSourcePolyfill(url, options);
-      eventSourceRef.current = eventSource;
+    eventSourceRef.current = eventSource;
 
-      eventSource.onopen = (event) => {
-        setIsConnected(true);
-        reconnectAttemptsRef.current = 0;
-        onOpen?.(event as unknown as Event);
-      };
+    eventSource.onopen = (event) => {
+      setIsConnected(true);
+      reconnectAttemptsRef.current = 0;
+      onOpen?.(event as unknown as Event);
+    };
 
-      eventSource.onmessage = (event) => {
-        onMessage(event as MessageEvent<NotificationEvent>);
-      };
+    eventSource.onmessage = (event) => {
+      onMessage(event as MessageEvent<NotificationEvent>);
+    };
 
-      eventSource.onerror = (event) => {
-        setIsConnected(false);
-        eventSource.close();
-        eventSourceRef.current = null;
-
-        onError?.(event as unknown as Event);
-
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current);
-          }
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current += 1;
-            connect();
-          }, reconnectInterval);
-        }
-      };
-    } catch {
+    eventSource.onerror = (event) => {
       setIsConnected(false);
+      eventSource.close();
+      eventSourceRef.current = null;
+
+      onError?.(event);
 
       if (reconnectAttemptsRef.current < maxReconnectAttempts) {
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
 
-        reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = window.setTimeout(() => {
           reconnectAttemptsRef.current += 1;
           connect();
         }, reconnectInterval);
       }
-    }
+    };
   }, [
     url,
     onMessage,
@@ -102,6 +82,7 @@ const useSSE = ({
     maxReconnectAttempts,
     headers,
     withCredentials,
+    userId,
     isConnected,
   ]);
 
@@ -119,16 +100,79 @@ const useSSE = ({
     setIsConnected(false);
   }, []);
 
-  // ✅ userId가 존재할 때만 연결 시도
-  useEffect(() => {
-    if (!eventSourceRef.current && !isConnected) {
-      connect();
+  const requestLeadership = useCallback(() => {
+    if (!userId) return;
+
+    if (document.visibilityState !== 'visible') return;
+
+    // 리더가 아니면 브로드캐스트로 리더 요청
+    bcRef.current?.postMessage('sse-request');
+
+    // 약간의 지연 후 리더가 없는 경우 내가 맡음
+    setTimeout(() => {
+      if (!isLeaderRef.current) {
+        isLeaderRef.current = true;
+        connect();
+      }
+    }, 100);
+  }, [userId, connect]);
+
+  const handleVisibilityChange = useCallback(() => {
+    if (document.visibilityState === 'visible') {
+      requestLeadership();
+    } else {
+      if (isLeaderRef.current) {
+        bcRef.current?.postMessage('sse-release');
+        isLeaderRef.current = false;
+        disconnect();
+      }
     }
+  }, [disconnect, requestLeadership]);
+
+  // 초기 브로드캐스트 채널 설정 및 이벤트 리스너 등록
+  useEffect(() => {
+    bcRef.current = new BroadcastChannel('sse_channel');
+
+    bcRef.current.onmessage = (event) => {
+      const data = event.data;
+
+      if (data === 'sse-request') {
+        if (isLeaderRef.current) {
+          bcRef.current?.postMessage('sse-taken');
+        }
+      }
+
+      if (data === 'sse-taken') {
+        if (!isLeaderRef.current) {
+          disconnect(); // 다른 탭이 리더니까 연결 끊음
+        }
+      }
+
+      if (data === 'sse-release') {
+        requestLeadership();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      bcRef.current?.close();
+
+      if (isLeaderRef.current) {
+        bcRef.current?.postMessage('sse-release');
+        isLeaderRef.current = false;
+        disconnect();
+      }
     };
-  }, [connect, disconnect, isConnected]);
+  }, [disconnect, handleVisibilityChange, requestLeadership]);
+
+  // userId가 생긴 후에 리더 시도
+  useEffect(() => {
+    if (userId && document.visibilityState === 'visible') {
+      requestLeadership();
+    }
+  }, [userId, requestLeadership]);
 
   return {
     isConnected,
