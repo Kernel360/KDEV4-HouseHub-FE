@@ -171,14 +171,14 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '매물 평수',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 4,
       },
       {
         id: uuidv4(),
         label: '희망 매도가',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 5,
       },
@@ -202,7 +202,7 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '희망 임대료',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 5,
       },
@@ -269,7 +269,7 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '매물 평수',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 4,
       },
@@ -368,14 +368,14 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '매물 평수',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 4,
       },
       {
         id: uuidv4(),
         label: '희망 매도가',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 5,
       },
@@ -399,7 +399,7 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '희망 임대료',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 5,
       },
@@ -467,14 +467,14 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '매물 평수',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 4,
       },
       {
         id: uuidv4(),
         label: '희망 매도가',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 5,
       },
@@ -498,7 +498,7 @@ export const generateTypeBasedQuestions = (
       {
         id: uuidv4(),
         label: '희망 임대료',
-        type: 'TEXT' as QuestionType,
+        type: 'NUMBER' as QuestionType,
         isRequired: true,
         questionOrder: 5,
       },

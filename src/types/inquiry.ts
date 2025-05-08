@@ -100,6 +100,7 @@ export interface InquiryDetail {
 // 답변 DTO 타입
 export interface AnswerDto {
   questionId: number;
+  questionType: QuestionType;
   questionContent: string;
   answer: string;
 }
