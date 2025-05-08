@@ -1,14 +1,14 @@
 'use client';
 
-import type React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import type { InquiryTemplate, InquiryAnswer, CreateInquiryRequest } from '../../types/inquiry';
-import QuestionField from './QuestionField';
 import { createInquiry } from '../../api/inquiry';
 import Button from '../ui/Button';
 import { useToast } from '../../context/useToast';
+import QuestionField from './QuestionField';
+import type { InquiryTemplate, CreateInquiryRequest } from '../../types/inquiry';
+import type { InquiryAnswer } from '../../types/inquiry';
 
 interface FormRendererProps {
   template: InquiryTemplate;
@@ -29,7 +29,9 @@ const FormRenderer: React.FC<FormRendererProps> = ({
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const methods = useForm();
+  const methods = useForm({
+    mode: 'onChange', // 실시간 에러 감지를 위한 설정
+  });
   const {
     handleSubmit,
     control,
@@ -49,21 +51,16 @@ const FormRenderer: React.FC<FormRendererProps> = ({
 
       // 답변 데이터 구성
       const answers: InquiryAnswer[] = [];
-
-      // 연락처 정보 변수 초기화
       let phone = '';
 
-      // 질문별 답변 처리
       sortedQuestions.forEach((question, index) => {
         const answer = data.answers[question.id];
         if (answer !== undefined && answer !== '') {
-          // 답변 객체 생성
           answers.push({
             questionId: question.id,
             answerText: typeof answer === 'string' ? answer : JSON.stringify(answer),
           });
 
-          // 첫 세 질문(순서대로 name, email, phone)에 대한 답변 추출
           if (index === 1) {
             phone = typeof answer === 'string' ? answer : JSON.stringify(answer);
           }
@@ -90,12 +87,10 @@ const FormRenderer: React.FC<FormRendererProps> = ({
 
       // 응답 처리
       if (response.code === 'INQUIRY_CREATE_SUCCESS') {
-        // 성공 처리
         showToast('문의가 성공적으로 등록되었습니다.', 'success');
         onSubmitSuccess();
         navigate('/inquiry/complete');
       } else {
-        // 에러 처리
         onSubmitError(response.message || '문의 등록에 실패했습니다.');
         showToast(response.message || '문의 등록에 실패했습니다.', 'error');
       }

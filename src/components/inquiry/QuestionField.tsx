@@ -10,6 +10,7 @@ import Checkbox from '../ui/Checkbox';
 import { Paperclip, X } from 'react-feather';
 import RegionSelector from '../region/RegionSelector';
 import { RegionData } from '../../types/region';
+import AddressInput from '../ui/AddressInput';
 
 interface QuestionFieldProps {
   question: Question;
@@ -42,6 +43,31 @@ const QuestionField: React.FC<QuestionFieldProps> = ({ question, control, error 
 
   // 질문 타입에 따른 입력 필드 렌더링
   const renderField = () => {
+    const isTextType = question.type === 'TEXT';
+    const includesAddress = question.label.includes('주소');
+
+    // 주소 컴포넌트를 렌더링할 조건
+    if (isTextType && includesAddress) {
+      return (
+        <div>
+          <Controller
+            name={`answers.${question.id}`}
+            control={control}
+            defaultValue={{
+              jibunAddress: '',
+              roadAddress: '',
+              detailAddress: '',
+              zipCode: '',
+            }}
+            render={({ field: { onChange, value } }) => (
+              <AddressInput onAddressSelect={(address) => onChange(address)} />
+            )}
+          />
+          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        </div>
+      );
+    }
+
     return (
       <Controller
         name={`answers.${question.id}`}
@@ -49,6 +75,43 @@ const QuestionField: React.FC<QuestionFieldProps> = ({ question, control, error 
         defaultValue=""
         rules={{
           required: question.isRequired ? `${question.label}은(는) 필수 항목입니다.` : false,
+          // 질문 타입별 유효성 검사 추가
+          ...(question.type === QuestionType.EMAIL && {
+            pattern: {
+              value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+              message: '유효한 이메일 주소를 입력해주세요.',
+            },
+          }),
+          ...(question.type === QuestionType.PHONE && {
+            pattern: {
+              value: /^010-\d{4}-\d{4}$/,
+              message: '유효한 전화번호를 입력해주세요. (예: 010-0000-0000)',
+            },
+          }),
+          ...(question.type === QuestionType.NUMBER && {
+            min: {
+              value: 1,
+              message: '1 이상의 숫자를 입력해주세요.',
+            },
+          }),
+          ...(question.type === QuestionType.FILE && {
+            validate: {
+              fileSize: (value) =>
+                value && value[0].size <= 5 * 1024 * 1024
+                  ? true
+                  : '파일 크기는 5MB 이하로 업로드해주세요.',
+              fileType: (value) =>
+                value && /image\/(jpeg|png|jpg)/.test(value[0].type)
+                  ? true
+                  : 'JPEG, PNG 형식의 이미지 파일만 업로드 가능합니다.',
+            },
+          }),
+          ...(question.type === QuestionType.TEXTAREA && {
+            maxLength: {
+              value: 500,
+              message: '500자 이하로 입력해주세요.',
+            },
+          }),
         }}
         render={({ field: { onChange, value, ref }, fieldState: { error } }) => {
           switch (question.type) {
