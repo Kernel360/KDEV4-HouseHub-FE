@@ -123,7 +123,7 @@ const SignUp: React.FC = () => {
     }
 
     try {
-      const result = await sendVerification(email, VerificationType.SIGNUP);
+      const result = await sendVerification(email, VerificationType.EMAIL_VERIFICATION);
       if (result.success) {
         showToast('인증 메일이 발송되었습니다. 이메일을 확인해주세요.', 'success');
       } else {
@@ -173,7 +173,7 @@ const SignUp: React.FC = () => {
     }
 
     try {
-      const success = await resendVerification(email, VerificationType.SIGNUP);
+      const success = await resendVerification(email, VerificationType.EMAIL_VERIFICATION);
       if (success) {
         showToast('인증 메일을 재전송했습니다. 이메일을 확인해주세요.', 'success');
 
